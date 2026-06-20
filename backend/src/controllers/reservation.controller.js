@@ -1,4 +1,4 @@
-import { reserveSeats } from "../services/reservation.service.js";
+import { reserveSeats, getActiveReservationByUser } from "../services/reservation.service.js";
 import { successResponse, errorResponse } from "../utils/apiResponse.js";
 
 export const reserveSeatsController = async (req, res, next) => {
@@ -17,6 +17,24 @@ export const reserveSeatsController = async (req, res, next) => {
     const reservation = await reserveSeats({ userId, eventId, seatNumbers });
 
     return successResponse(res, "Seats reserved successfully", { reservation }, 201);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const getActiveReservationController = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+
+    if (!userId) {
+      return errorResponse(res, "userId is required", [], 400);
+    }
+
+    const reservation = await getActiveReservationByUser(userId);
+
+    return successResponse(res, "Active reservation fetched", {
+      reservation: reservation || null,
+    });
   } catch (error) {
     return next(error);
   }

@@ -17,14 +17,12 @@ app.use(express.json());
 app.use(morgan("dev"));
 
 app.get("/health", (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: "Server is running",
-  });
+  res.status(200).json({ success: true, message: "Server is running" });
 });
 
 app.use("/api/events", eventRoutes);
 app.use("/api/reserve", reservationRoutes);
+app.use("/api/reservations", reservationRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/seats", seatRoutes);
 

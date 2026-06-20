@@ -7,3 +7,7 @@ export const reserveSeats = ({ userId, eventId, seatNumbers }) => {
 export const confirmBooking = (reservationId) => {
   return axiosClient.post("/bookings", { reservationId });
 };
+
+export const getActiveReservation = (userId) => {
+  return axiosClient.get(`/reservations/user/${userId}`);
+};

@@ -38,15 +38,7 @@ export const reserveSeats = async ({ userId, eventId, seatNumbers }) => {
     const expiresAt = new Date(Date.now() + RESERVATION_DURATION_MS);
 
     const [reservation] = await Reservation.create(
-      [
-        {
-          userId,
-          eventId,
-          seatNumbers,
-          status: "active",
-          expiresAt,
-        },
-      ],
+      [{ userId, eventId, seatNumbers, status: "active", expiresAt }],
       { session }
     );
 
@@ -67,4 +59,14 @@ export const reserveSeats = async ({ userId, eventId, seatNumbers }) => {
   } finally {
     session.endSession();
   }
+};
+
+export const getActiveReservationByUser = async (userId) => {
+  const reservation = await Reservation.findOne({
+    userId,
+    status: "active",
+    expiresAt: { $gt: new Date() },
+  }).sort({ createdAt: -1 });
+
+  return reservation;
 };

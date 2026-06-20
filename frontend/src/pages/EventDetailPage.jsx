@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import axiosClient from "../api/axiosClient";
+import { isAuthenticated } from "../utils/auth";
 
 const EventDetailPage = () => {
   const { id } = useParams();
@@ -28,6 +29,14 @@ const EventDetailPage = () => {
 
     fetchEvent();
   }, [id]);
+
+  const handleSelectSeats = () => {
+    if (!isAuthenticated()) {
+      navigate("/login");
+      return;
+    }
+    navigate(`/events/${id}/seats`);
+  };
 
   const formattedDate = event
     ? new Date(event.dateTime).toLocaleString("en-IN", {
@@ -113,7 +122,7 @@ const EventDetailPage = () => {
               </div>
 
               <button
-                onClick={() => navigate(`/events/${id}/seats`)}
+                onClick={handleSelectSeats}
                 className="mt-2xl w-full rounded-xl bg-primary py-md text-body-md font-semibold text-white shadow-button transition hover:scale-[1.02] hover:bg-primary-dark active:scale-[0.98]"
               >
                 Select Seats

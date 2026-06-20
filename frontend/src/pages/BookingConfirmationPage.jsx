@@ -2,24 +2,69 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
-import { confirmBooking } from "../services/reservationService";
+import { confirmBooking, getActiveReservation } from "../services/reservationService";
+import { getEventById } from "../services/eventService";
+import { getCurrentUser } from "../utils/auth";
+import { clearStoredReservationId } from "../utils/reservationStorage";
 import ReservationTimer from "../components/booking/ReservationTimer";
 
 const BookingConfirmationPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const { reservation, event } = location.state || {};
+  const [reservation, setReservation] = useState(location.state?.reservation || null);
+  const [event, setEvent] = useState(location.state?.event || null);
+  const [isRecovering, setIsRecovering] = useState(!location.state?.reservation);
 
   const [isBooking, setIsBooking] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [isExpired, setIsExpired] = useState(false);
 
   useEffect(() => {
-    if (!reservation || !event) {
-      navigate("/");
-    }
-  }, [reservation, event, navigate]);
+    if (location.state?.reservation && location.state?.event) return;
+
+    const recoverReservation = async () => {
+      const user = getCurrentUser();
+
+      if (!user) {
+        navigate("/");
+        return;
+      }
+
+      try {
+        const response = await getActiveReservation(user.id);
+        const activeReservation = response.data.reservation;
+
+        if (!activeReservation) {
+          clearStoredReservationId();
+          toast.error("Reservation expired");
+          navigate("/");
+          return;
+        }
+
+        const eventResponse = await getEventById(activeReservation.eventId);
+
+        setReservation(activeReservation);
+        setEvent(eventResponse.data.event);
+      } catch {
+        clearStoredReservationId();
+        toast.error("Reservation expired");
+        navigate("/");
+      } finally {
+        setIsRecovering(false);
+      }
+    };
+
+    recoverReservation();
+  }, []);
+
+  if (isRecovering) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-border-dark border-t-primary" />
+      </div>
+    );
+  }
 
   if (!reservation || !event) {
     return null;
@@ -27,6 +72,7 @@ const BookingConfirmationPage = () => {
 
   const handleExpire = () => {
     setIsExpired(true);
+    clearStoredReservationId();
     toast.error("Reservation expired");
     navigate("/");
   };
@@ -41,6 +87,7 @@ const BookingConfirmationPage = () => {
 
     try {
       await confirmBooking(reservation._id);
+      clearStoredReservationId();
       toast.success("Booking confirmed successfully!");
       setIsConfirmed(true);
     } catch (err) {
@@ -60,10 +107,7 @@ const BookingConfirmationPage = () => {
       >
         {!isConfirmed && (
           <div className="mb-xl">
-            <ReservationTimer
-              expiresAt={reservation.expiresAt}
-              onExpire={handleExpire}
-            />
+            <ReservationTimer expiresAt={reservation.expiresAt} onExpire={handleExpire} />
           </div>
         )}
 
@@ -114,9 +158,7 @@ const BookingConfirmationPage = () => {
         <div className="mt-xl space-y-md rounded-xl bg-surface-muted p-lg text-left">
           <div className="flex items-center justify-between">
             <span className="text-body-sm text-textSecondaryDark">Event</span>
-            <span className="text-body-sm font-semibold text-textPrimaryDark">
-              {event.name}
-            </span>
+            <span className="text-body-sm font-semibold text-textPrimaryDark">{event.name}</span>
           </div>
 
           <div className="flex items-start justify-between">
@@ -137,9 +179,7 @@ const BookingConfirmationPage = () => {
             <span className="text-body-sm text-textSecondaryDark">Status</span>
             <span
               className={`rounded-full px-sm py-xs text-caption font-semibold uppercase ${
-                isConfirmed
-                  ? "bg-success/10 text-success"
-                  : "bg-warning/10 text-warning"
+                isConfirmed ? "bg-success/10 text-success" : "bg-warning/10 text-warning"
               }`}
             >
               {isConfirmed ? "confirmed" : reservation.status}

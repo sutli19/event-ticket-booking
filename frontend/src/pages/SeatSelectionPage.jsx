@@ -5,7 +5,8 @@ import useEvent from "../hooks/useEvent";
 import useSeats from "../hooks/useSeats";
 import { groupSeatsByRows } from "../utils/seatHelpers";
 import { reserveSeats } from "../services/reservationService";
-import { DEMO_USER_ID } from "../utils/constants";
+import { getCurrentUser, isAuthenticated } from "../utils/auth";
+import { setStoredReservationId } from "../utils/reservationStorage";
 import SeatLegend from "../components/seats/SeatLegend";
 import SeatGrid from "../components/seats/SeatGrid";
 import BookingSummary from "../components/booking/BookingSummary";
@@ -32,10 +33,7 @@ const SeatSelectionPage = () => {
 
   const handleToggleSeat = (seatNumber) => {
     const seat = seats.find((s) => s.seatNumber === seatNumber);
-
-    if (!seat || seat.status !== "available") {
-      return;
-    }
+    if (!seat || seat.status !== "available") return;
 
     setSelectedSeats((prev) =>
       prev.includes(seatNumber)
@@ -45,6 +43,11 @@ const SeatSelectionPage = () => {
   };
 
   const handleReserveSeats = async () => {
+    if (!isAuthenticated()) {
+      navigate("/login");
+      return;
+    }
+
     if (selectedSeats.length === 0) {
       toast.error("Please select at least one seat.");
       return;
@@ -53,23 +56,23 @@ const SeatSelectionPage = () => {
     setIsReserving(true);
 
     try {
+      const user = getCurrentUser();
+
       const response = await reserveSeats({
-        userId: DEMO_USER_ID,
+        userId: user.id,
         eventId: id,
         seatNumbers: selectedSeats,
       });
+
+      const reservation = response.data.reservation;
+      setStoredReservationId(reservation._id);
 
       toast.success("Seats reserved successfully");
 
       await refreshSeats();
       setSelectedSeats([]);
 
-      navigate("/booking/success", {
-        state: {
-          reservation: response.data.reservation,
-          event,
-        },
-      });
+      navigate("/booking/success", { state: { reservation, event } });
     } catch (err) {
       toast.error(err.message || "Failed to reserve seats. Please try again.");
       await refreshSeats();
@@ -89,9 +92,7 @@ const SeatSelectionPage = () => {
   if (error || !event) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-md bg-background text-center">
-        <p className="text-body-md text-danger">
-          {error || "Event not found."}
-        </p>
+        <p className="text-body-md text-danger">{error || "Event not found."}</p>
         <button
           onClick={() => navigate("/")}
           className="rounded-lg bg-primary px-lg py-sm text-body-sm font-medium text-white shadow-button"
@@ -122,13 +123,11 @@ const SeatSelectionPage = () => {
 
         <div className="rounded-2xl border border-border-dark bg-surface-dark p-xl shadow-card">
           <SeatLegend />
-
           <div className="mt-xl flex justify-center">
             <div className="mb-lg w-2/3 rounded-full bg-surface-muted py-xs text-center text-caption uppercase tracking-widest text-textSecondaryDark">
               Screen / Stage
             </div>
           </div>
-
           <div className="flex justify-center overflow-x-auto pb-md">
             <SeatGrid
               seatRows={seatRows}
