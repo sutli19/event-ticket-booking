@@ -1,43 +1,52 @@
 # EventHub - Event Ticket Booking System
 
-A full-stack event ticket booking application built using the MERN stack. The application allows users to browse events, select seats, reserve them temporarily, and confirm bookings while preventing double booking through atomic database operations.
+## Overview
+
+EventHub is a full-stack event ticket booking application built using the MERN stack. The application enables users to browse events, reserve seats temporarily, and confirm bookings while ensuring that no two users can book the same seat simultaneously.
+
+The system simulates a real-world ticket booking workflow by supporting temporary seat reservations with automatic expiration.
 
 ---
 
 ## Features
 
-### Event Browsing
+### Authentication
+
+* Basic user authentication using browser localStorage.
+* Protected routes for authenticated users.
+* Login and logout functionality.
+* Automatic redirection for authenticated users.
+
+### Event Management
 
 * Browse all available events.
-* View detailed event information.
-* Responsive event listing interface.
+* View detailed information for each event.
 
 ### Seat Reservation
 
-* Interactive seat grid layout.
-* Color-coded seat states.
-* Select multiple seats simultaneously.
-* Reserve seats for 10 minutes.
+* Interactive seat selection interface.
+* Color-coded seat statuses:
 
-### Booking Flow
+  * Available
+  * Selected
+  * Reserved
+  * Booked
+* Multiple seat selection.
+* Temporary seat reservation for 10 minutes.
+* Reservation countdown timer.
+* Reservation recovery for the same authenticated user.
+
+### Booking
 
 * Confirm reserved seats.
-* Reservation countdown timer.
-* Automatic reservation expiry.
-* Prevent booking after reservation expiration.
-
-### Concurrency Handling
-
-* Prevent double booking.
-* Atomic seat reservation using MongoDB transactions.
-* Real-time seat availability updates.
+* Automatic release of expired reservations.
+* Prevention of double booking using database transactions.
 
 ### User Experience
 
-* Modern responsive UI.
-* Toast notifications.
-* Loading indicators.
-* Smooth animations using Framer Motion.
+* Responsive user interface.
+* Loading indicators and feedback messages.
+* Error handling and validation.
 
 ---
 
@@ -47,11 +56,10 @@ A full-stack event ticket booking application built using the MERN stack. The ap
 
 * React.js
 * Vite
-* Tailwind CSS
 * React Router DOM
 * Axios
+* Tailwind CSS
 * Framer Motion
-* React Hot Toast
 
 ### Backend
 
@@ -64,55 +72,44 @@ A full-stack event ticket booking application built using the MERN stack. The ap
 
 ## Project Structure
 
-```bash
-event-ticket-booking
+```text
+event-ticket-booking/
 │
-├── frontend
-│   └── src
-│       ├── api
-│       ├── components
-│       ├── pages
-│       ├── routes
-│       ├── services
-│       ├── utils
-│       └── App.jsx
+├── frontend/
+│   ├── src/
+│   ├── public/
+│   └── package.json
 │
-├── backend
-│   └── src
-│       ├── config
-│       ├── controllers
-│       ├── jobs
-│       ├── middlewares
-│       ├── models
-│       ├── routes
-│       ├── scripts
-│       ├── services
-│       └── server.js
+├── backend/
+│   ├── src/
+│   │   ├── controllers/
+│   │   ├── models/
+│   │   ├── routes/
+│   │   ├── services/
+│   │   ├── middleware/
+│   │   └── scripts/
+│   └── package.json
 │
 └── README.md
 ```
 
 ---
 
-## Installation
+## Running the Backend
 
-### Clone Repository
-
-```bash
-git clone <repository-url>
-cd event-ticket-booking
-```
-
----
-
-## Backend Setup
+### 1. Navigate to backend directory
 
 ```bash
 cd backend
+```
+
+### 2. Install dependencies
+
+```bash
 npm install
 ```
 
-Create a `.env` file:
+### 3. Create a `.env` file
 
 ```env
 PORT=5000
@@ -120,25 +117,49 @@ MONGO_URI=your_mongodb_connection_string
 NODE_ENV=development
 ```
 
-Start backend server:
+### 4. Start the backend server
 
 ```bash
 npm run dev
+```
+
+Backend will run on:
+
+```text
+http://localhost:5000
 ```
 
 ---
 
-## Frontend Setup
+## Running the Frontend
+
+### 1. Navigate to frontend directory
 
 ```bash
 cd frontend
+```
+
+### 2. Install dependencies
+
+```bash
 npm install
+```
+
+### 3. Create a `.env` file
+
+```env
+VITE_API_URL=http://localhost:5000/api
+```
+
+### 4. Start the frontend
+
+```bash
 npm run dev
 ```
 
-Application runs on:
+Frontend will run on:
 
-```bash
+```text
 http://localhost:5173
 ```
 
@@ -146,7 +167,7 @@ http://localhost:5173
 
 ## Database Seeding
 
-Populate sample events and seats:
+To populate sample events and seats:
 
 ```bash
 cd backend
@@ -159,39 +180,33 @@ node src/scripts/seedDatabase.js
 
 ### Events
 
-| Method | Endpoint          | Description       |
-| ------ | ----------------- | ----------------- |
-| GET    | `/api/events`     | Get all events    |
-| GET    | `/api/events/:id` | Get event details |
-
-### Seats
-
-| Method | Endpoint              | Description            |
-| ------ | --------------------- | ---------------------- |
-| GET    | `/api/seats/:eventId` | Get seats for an event |
+```http
+GET /api/events
+GET /api/events/:id
+```
 
 ### Reservations
 
-| Method | Endpoint       | Description            |
-| ------ | -------------- | ---------------------- |
-| POST   | `/api/reserve` | Reserve selected seats |
+```http
+POST /api/reserve
+GET /api/reservations/user/:userId
+```
 
 ### Bookings
 
-| Method | Endpoint        | Description     |
-| ------ | --------------- | --------------- |
-| POST   | `/api/bookings` | Confirm booking |
+```http
+POST /api/bookings
+```
 
 ---
 
-## Seat Status Legend
+## Assumptions
 
-| Status    | Meaning                    |
-| --------- | -------------------------- |
-| Available | Seat can be selected       |
-| Selected  | Currently selected by user |
-| Reserved  | Temporarily reserved       |
-| Booked    | Permanently booked         |
+* Authentication is implemented using browser localStorage for simplicity.
+* Password recovery and advanced account management are outside the scope of this assignment.
+* Reserved seats remain locked for 10 minutes.
+* Users are expected to complete booking before reservation expiry.
+* Reservation recovery is supported only for the authenticated reservation owner.
 
 ---
 
@@ -199,35 +214,34 @@ node src/scripts/seedDatabase.js
 
 ### Preventing Double Booking
 
-MongoDB transactions are used to guarantee atomic reservation operations. A seat can only be reserved if it is currently marked as available.
+Double booking prevention is implemented using MongoDB transactions and seat status validation.
 
-### Reservation Expiry
+The booking flow works as follows:
 
-Reservations remain active for 10 minutes. A scheduled cleanup process automatically releases expired reservations and makes seats available again.
+1. Before reserving seats, the system validates that all selected seats are still available.
+2. Seat updates and reservation creation are performed inside a MongoDB transaction.
+3. If any selected seat is already reserved or booked, the entire transaction is aborted.
+4. No partial updates occur, ensuring database consistency.
+5. Expired reservations automatically release seats back to the available state.
 
-### Concurrency Control
+This approach guarantees that multiple users cannot successfully reserve or book the same seat simultaneously.
 
-Seat availability is verified inside database transactions before reservation confirmation, ensuring multiple users cannot reserve the same seat simultaneously.
+### Architecture Decisions
 
----
-
-## Assumptions
-
-* User authentication was considered out of scope for this assignment.
-* Reservation duration is fixed at 10 minutes.
-* Users are expected to complete the booking from the reservation confirmation page before the reservation expires.
-* Reserved seats are treated uniformly for all users because authentication is not implemented.
-* Demo event data is generated using a seed script.
+* React component-based architecture was used to ensure modularity and reusability.
+* Service layers were used on the backend to separate business logic from route handlers.
+* Protected routes were implemented to secure authenticated pages.
+* Axios was used for centralized API communication.
 
 ---
 
 ## Future Enhancements
 
-* User authentication and authorization.
-* Payment gateway integration.
+* JWT-based authentication.
+* Forgot password functionality.
 * Real-time seat updates using WebSockets.
-* Email notifications.
-* Reservation recovery using persistent user sessions.
+* Payment gateway integration.
+* Admin dashboard for event management.
 
 ---
 
@@ -235,4 +249,5 @@ Seat availability is verified inside database transactions before reservation co
 
 **Sweety Jaiswal**
 
-Developed as part of the SortMyScene Full Stack Developer Hiring Assignment.
+B.Sc. Computer Science Student
+MERN Stack Developer
