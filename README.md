@@ -6,6 +6,7 @@ EventHub is a full-stack event ticket booking application built using the MERN s
 
 The system simulates a real-world ticket booking workflow by supporting temporary seat reservations with automatic expiration.
 
+Live Link : https://event-ticket-booking-five.vercel.app/
 ---
 
 ## Features
